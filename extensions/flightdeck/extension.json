@@ -1,0 +1,61 @@
+{
+  "id": "flightdeck",
+  "name": "Flightdeck",
+  "description": "Live agent instruments beside the chat: serving model and fallback, context gauge with compression threshold, cost, a per-tool-call gate (approvals, denials, errors), subagent cards and swimlanes, a turn receipt and a session log. Read-only; ported from scasella/claude-flightdeck.",
+  "version": "0.2.0",
+  "author": "blabbleu",
+  "license": "MIT",
+  "homepage": "https://github.com/scasella/claude-flightdeck",
+  "assets": {
+    "scripts": [
+      "assets/fd-core.js",
+      "assets/flightdeck.js"
+    ],
+    "stylesheets": [
+      "assets/flightdeck.css"
+    ]
+  },
+  "capabilities": [
+    "manifest-bundle"
+  ],
+  "lifecycle": {
+    "webui_restart_required": false,
+    "sidecar_start_required": false,
+    "native_host_start_required": false,
+    "native_host_autostart": "none"
+  },
+  "permissions": {
+    "webui_api": {
+      "read": [
+        "/api/chat/stream",
+        "/api/sessions",
+        "/api/session",
+        "session"
+      ],
+      "write": []
+    },
+    "webui_navigation": true,
+    "dom": {
+      "owned": true,
+      "mutates_core_views": true
+    },
+    "storage": {
+      "owned": true,
+      "shared_webui_keys": [],
+      "note": "Extension namespace via WebUI storage API: s:* session snapshots, index and ui preferences; no raw storage keys."
+    },
+    "network_external": false,
+    "loopback_sidecar": false,
+    "native_host": false,
+    "filesystem": {
+      "arbitrary": false,
+      "serves_bundled_assets": true
+    }
+  },
+  "screenshots": [
+    "screenshots/desktop-dark.png",
+    "screenshots/desktop-light.png",
+    "screenshots/phone-320.png",
+    "screenshots/phone-390.png"
+  ]
+}

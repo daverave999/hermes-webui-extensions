@@ -1,0 +1,128 @@
+{
+  "extensions": [
+    {
+      "id": "flightdeck",
+      "name": "Flightdeck",
+      "description": "Live agent instruments beside the chat: model and context, tool gate, subagent cards, turn receipt and log.",
+      "scripts": [
+        "assets/fd-core.js",
+        "assets/flightdeck.js"
+      ],
+      "stylesheets": [
+        "assets/flightdeck.css"
+      ],
+      "permissions": {
+        "webui_api": {
+          "read": [
+            "/api/chat/stream",
+            "/api/sessions",
+            "/api/session",
+            "session"
+          ],
+          "write": []
+        },
+        "webui_navigation": true,
+        "dom": {
+          "owned": true,
+          "mutates_core_views": true
+        },
+        "storage": {
+          "owned": true,
+          "shared_webui_keys": [],
+          "note": "Extension namespace via WebUI storage API; no raw storage keys."
+        },
+        "network_external": false,
+        "loopback_sidecar": false,
+        "native_host": false,
+        "filesystem": {
+          "arbitrary": false,
+          "serves_bundled_assets": true
+        }
+      },
+      "settings_schema": [
+        {
+          "key": "panels",
+          "type": "string",
+          "label": "Panels, in order (main, gate, agents, advisor, receipt, log)",
+          "default": "main,gate,agents,advisor,receipt,log"
+        },
+        {
+          "key": "layout",
+          "type": "enum",
+          "label": "Layout",
+          "default": "auto",
+          "options": [
+            {
+              "value": "auto",
+              "label": "Auto (by panel width)"
+            },
+            {
+              "value": "compact",
+              "label": "Compact (one column)"
+            },
+            {
+              "value": "wide",
+              "label": "Wide (two columns)"
+            },
+            {
+              "value": "mini",
+              "label": "Mini (one line)"
+            }
+          ]
+        },
+        {
+          "key": "maxCards",
+          "type": "integer",
+          "label": "Agent cards before swimlanes (1-6)",
+          "default": 3
+        },
+        {
+          "key": "advisorPattern",
+          "type": "string",
+          "label": "Advisor words, separated by | (matched in the tool name or delegate role)",
+          "default": "advisor|architect|review"
+        },
+        {
+          "key": "advisorLabel",
+          "type": "string",
+          "label": "Advisor panel label",
+          "default": "ADVISOR"
+        },
+        {
+          "key": "gateLabel",
+          "type": "string",
+          "label": "Gate panel label",
+          "default": "GATE"
+        },
+        {
+          "key": "motion",
+          "type": "enum",
+          "label": "Motion",
+          "default": "while-active",
+          "options": [
+            {
+              "value": "while-active",
+              "label": "While work is running"
+            },
+            {
+              "value": "off",
+              "label": "Off"
+            }
+          ]
+        },
+        {
+          "key": "mobileStrip",
+          "type": "boolean",
+          "label": "Summary strip above the composer on narrow screens",
+          "default": true
+        },
+        {
+          "key": "pollAgents",
+          "type": "boolean",
+          "label": "Track subagents via child sessions",
+          "default": true
+        }
+      ]
+    }
+  ]
+}
