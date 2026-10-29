@@ -1,13 +1,29 @@
 (() => {
   'use strict';
 
-  // ── Theme Toggle extension for Hermes WebUI (v2: sidebar placement) ─────
+  // ── Theme Toggle extension for Hermes WebUI (v2.2.0: clobber-safe persistence) ─
   // Injects a sun/moon theme toggle button directly under the Settings cog —
   // in the desktop icon rail and in the mobile sidebar nav. Clicking it flips
-  // between light and dark mode using the WebUI's built-in _pickTheme()
-  // function, so the choice persists in localStorage and stays in sync with
-  // Settings → Appearance. The icon is CSS-driven: sun shows in dark mode
-  // (click to go light), moon shows in light mode (click to go dark).
+  // between light and dark: it applies the core's own theme helpers and
+  // persists the choice with a theme-only POST to /api/settings.
+  //
+  // Persistence design (important — read before changing this):
+  //   v2.1.0 called window._pickTheme(). That applies the theme, but it ends
+  //   with the core's appearance autosave, which POSTs the FULL appearance
+  //   payload built from the settings-pane DOM. Those checkbox controls are
+  //   only hydrated from the server when the Settings tab is opened — in any
+  //   tab where it has never been opened they hold template defaults, so the
+  //   autosave silently overwrote the user's real saved appearance settings
+  //   on every theme toggle (the "settings keep reverting" bug).
+  //   This version never calls _pickTheme(). It replicates the safe parts of
+  //   it (the core's _normalizeAppearance / _applyTheme / _syncThemePicker
+  //   helpers) and persists with the same partial-merge pattern the WebUI's
+  //   own boot path uses: a POST to /api/settings carrying only {theme}. The
+  //   server merges only the keys present in the payload, so a theme click
+  //   can never touch any other setting. The Settings pane's own autosave
+  //   remains the writer for every non-theme appearance key.
+  //   This code itself does no storage reads/writes, no fetch/XHR, and
+  //   contains no URL literals.
 
   if (window.__hermesThemeToggleLoaded) return;
   window.__hermesThemeToggleLoaded = true;
@@ -36,6 +52,28 @@
     return document.documentElement.classList.contains('dark');
   }
 
+  // ── Theme-only persistence (partial merge — the core boot-path pattern) ─
+  async function persistTheme(theme) {
+    if (typeof window.api !== 'function') {
+      // A core without the api() helper is older than this entry expects;
+      // the visual flip still works for this page's lifetime and the
+      // core's own boot write persists the choice on the next load.
+      console.warn('theme-toggle: core api() unavailable; theme applied but not persisted this session');
+      return;
+    }
+    try {
+      // Same partial-merge POST the WebUI's boot path makes: only the keys
+      // present in the body are merged into the saved settings, so this
+      // call can never modify any other appearance key.
+      await window.api('/api/settings', {
+        method: 'POST',
+        body: JSON.stringify({ theme: theme }),
+      });
+    } catch (e) {
+      // Non-fatal: the theme is applied visually for this page's lifetime.
+    }
+  }
+
   // ── Toggle theme ─────────────────────────────────────────────────────────
   function toggleTheme() {
     // Brief global transition for a smooth color swap.
@@ -44,16 +82,44 @@
       document.documentElement.classList.remove('theme-toggle-transitioning');
     }, 350);
 
-    // Prefer the WebUI's built-in _pickTheme: persists the choice and
-    // syncs Settings → Appearance.
-    if (typeof window._pickTheme === 'function') {
-      window._pickTheme(isDarkMode() ? 'light' : 'dark');
+    const next = isDarkMode() ? 'light' : 'dark';
+
+    // Deliberately NOT _pickTheme(): its trailing full-pane autosave can
+    // clobber other saved appearance settings (see the header note).
+    if (typeof window._applyTheme !== 'function') {
+      // No theme system in this core: stay inert rather than duplicating
+      // core theme behavior — this entry requires the API.
+      console.warn('theme-toggle: core theme helpers unavailable; button is inert');
       return;
     }
 
-    // No _pickTheme (core older than the theme system): stay inert rather
-    // than duplicating core theme behavior — this entry requires the API.
-    console.warn('theme-toggle: _pickTheme unavailable; button is inert');
+    let theme = next;
+    try {
+      // Normalize through the core validator (valid theme set, legacy-name
+      // mapping). The skin reference is read-only, used for validation only;
+      // this extension never writes a skin.
+      if (typeof window._normalizeAppearance === 'function') {
+        const sSel = document.getElementById('settingsSkin');
+        const skinRef = (sSel && sSel.value) || 'default';
+        theme = window._normalizeAppearance(next, skinRef).theme;
+      }
+    } catch (e) { /* fall through with `next` */ }
+
+    try {
+      window._applyTheme(theme);
+      if (typeof window._syncThemePicker === 'function') {
+        window._syncThemePicker(theme);
+      }
+      // Keep the pane's hidden input in sync when it exists in the DOM, so
+      // any later pane-originated save (Settings tab opened in this tab)
+      // reads the current value instead of a stale one.
+      const tSel = document.getElementById('settingsTheme');
+      if (tSel) tSel.value = theme;
+    } catch (e) {
+      console.warn('theme-toggle: core theme application failed', e);
+    }
+
+    persistTheme(theme);
   }
 
   // ── Button factory ───────────────────────────────────────────────────────

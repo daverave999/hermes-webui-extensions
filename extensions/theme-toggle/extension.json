@@ -1,8 +1,8 @@
 {
   "id": "theme-toggle",
   "name": "Theme Toggle",
-  "description": "Adds a sun/moon theme toggle button under the Settings cog in the icon rail (desktop) and sidebar nav (mobile). Uses the built-in _pickTheme() function so the choice persists and syncs with Settings \u2192 Appearance.",
-  "version": "2.1.0",
+  "description": "Adds a sun/moon theme toggle button under the Settings cog in the icon rail (desktop) and sidebar nav (mobile). Persists via a theme-only POST to /api/settings (partial merge \u2014 the same pattern as the WebUI's boot path) so it never affects other appearance settings.",
+  "version": "2.2.0",
   "author": "daverave999",
   "assets": {
     "scripts": [
@@ -27,7 +27,7 @@
   "permissions": {
     "webui_api": {
       "read": [],
-      "write": []
+      "write": ["/api/settings"]
     },
     "webui_navigation": false,
     "dom": {
